@@ -23,6 +23,8 @@ import java.util.List;
 
 public class GameScreen extends Screen {
 
+    int boardX = -1;
+    int boardY = -1;
     int selectedX = -1;
     int selectedY = -1;
     Piece selectedPiece;
@@ -47,33 +49,54 @@ public class GameScreen extends Screen {
 
                 int boardX = translateXToBoard(event.x);
                 int boardY = translateYToBoard(event.y);
-                Log.d("Test", "Touched: " + boardX + ", " + boardY);
 
                 //Checks that click is within board bounds
                 if(boardX < 8 && boardX > -1 && boardY < 8 && boardY > -1) {
                     //selectedPiece will be null if no piece selected
-                    if(selectedPiece == null) {
-                        selectedPiece = board.pieceAt(boardX, boardY);
+                    //if(selectedPiece == null) {
+                    //    selectedPiece = board.pieceAt(boardX, boardY);
 
-                        selectedX = boardX;
-                        selectedY = boardY;
-                    }
+                    //    selectedX = boardX;
+                    //    selectedY = boardY;
+                    //}
                     //selectedPiece will be valid if choosing where to move
                     //selectedPiece gets reset to null on second click no matter what
-                    else {
-                        board.movePiece(selectedX, selectedY, boardX, boardY);
-                        selectedPiece = null;
-                        selectedX = -1;
-                        selectedY = -1;
+                    //else {
+                    //    board.movePiece(selectedX, selectedY, boardX, boardY);
+                    //    selectedPiece = null;
+                    //    selectedX = -1;
+                    //    selectedY = -1;
+                    //}
+                    if(selectedPiece != null) {
+                        board.addPiece(selectedPiece, boardX, boardY);
                     }
+                    //Reset piece being held after let go
+                    selectedPiece = null;
+                }
+            }
+            else if(event.type == Input.TouchEvent.TOUCH_DOWN) {
+                Log.d("TouchTest", "Touch down event detected.");
+
+                boardX = translateXToBoard(event.x);
+                boardY = translateYToBoard(event.y);
+
+                if(selectedPiece == null) {
+                    selectedPiece = board.pieceAt(boardX, boardY);
                 }
 
             }
-            else if(event.type == Input.TouchEvent.TOUCH_DOWN) {
-                Log.d("TouchTest", "Touch down event detected");
-            }
             else if(event.type == Input.TouchEvent.TOUCH_DRAGGED) {
-                Log.d("TouchTest", "Touch drag event detected");
+
+                if(selectedPiece != null) {
+
+                    if(boardX != -1 && boardY != -1) {
+                        board.removePieceAt(boardX,boardY);
+                    }
+                    selectedX = event.x;
+                    selectedY = event.y;
+                    Log.d("TouchTest", "Coordinates of drag = " + selectedX + ", " + selectedY);
+
+                }
             }
         }
 
@@ -90,10 +113,15 @@ public class GameScreen extends Screen {
 
                 Piece piece = board.pieceAt(j,k);
                 if(piece != null){
-                    updatePiece(piece,j,k);
+                    updatePiece(piece,j,k, true);
                 }
 
             }
+        }
+
+        //Draw piece being "held" when dragging
+        if(selectedPiece != null) {
+            updatePiece(selectedPiece, selectedX, selectedY, false);
         }
 
     }
@@ -114,7 +142,7 @@ public class GameScreen extends Screen {
     }
 
     //Draws piece at coordinates x,y
-    private void updatePiece(Piece piece, int x, int y){
+    private void updatePiece(Piece piece, float x, float y, boolean isOnBoard){
 
         boolean pieceIsWhite = (piece.color == Piece.PieceAttribute.COLOR_WHITE);
 
@@ -124,9 +152,9 @@ public class GameScreen extends Screen {
             //draws pawn
             case Piece.PieceAttribute.TYPE_PAWN:
                 if (pieceIsWhite) {
-                    drawPawn(Piece.PieceAttribute.COLOR_WHITE, x, y);
+                    drawPawn(Piece.PieceAttribute.COLOR_WHITE, x, y, isOnBoard);
                 } else {
-                    drawPawn(Piece.PieceAttribute.COLOR_BLACK, x, y);
+                    drawPawn(Piece.PieceAttribute.COLOR_BLACK, x, y, isOnBoard);
                 }
                 break;
 
@@ -180,14 +208,28 @@ public class GameScreen extends Screen {
     }
 
 
-    private void drawPawn(int pieceColor, int x , int y){
+    private void drawPawn(int pieceColor, float x , float y, boolean isOnBoard){
         Graphics g = game.getGraphics();
+        int pixelX;
+        int pixelY;
+
+        //Determines whether to use "constrained" board coordinates to draw or
+        //"free" screen coordinates to draw
+        if(isOnBoard) {
+            pixelX = (int) (Pawn.X_START + x * Board.X_OFFSET);
+            pixelY = (int) (Pawn.Y_START + y * Board.Y_OFFSET);
+        }
+        else {
+            pixelX = (int) x;
+            pixelY = (int) y;
+            Log.d("Test", "Drag draw coordinates: " + pixelX + ", " + pixelY);
+        }
 
         //draw white pawn
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    Pawn.X_START + x * Board.X_OFFSET,
-                    Pawn.Y_START + y * Board.Y_OFFSET,
+                    pixelX,
+                    pixelY,
                     Pawn.WHITE_X_COORD,
                     Pawn.WHITE_Y_COORD,
                     Pawn.WIDTH,
@@ -196,8 +238,8 @@ public class GameScreen extends Screen {
         //draw black pawn
         else {
             g.drawPixmap(Assets.pieces,
-                    Pawn.X_START + x * Board.X_OFFSET,
-                    Pawn.Y_START + y * Board.Y_OFFSET,
+                    pixelX,
+                    pixelY,
                     Pawn.BLACK_X_COORD,
                     Pawn.BLACK_Y_COORD,
                     Pawn.WIDTH,
@@ -207,14 +249,14 @@ public class GameScreen extends Screen {
 
     }
 
-    private void drawKnight(int pieceColor, int x , int y){
+    private void drawKnight(int pieceColor, float x , float y){
         Graphics g = game.getGraphics();
 
         //draw white knight
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    Knight.X_START + x * Board.X_OFFSET,
-                    Knight.Y_START + y * Board.Y_OFFSET,
+                    (int) (Knight.X_START + x * Board.X_OFFSET),
+                    (int) (Knight.Y_START + y * Board.Y_OFFSET),
                     Knight.WHITE_X_COORD,
                     Knight.WHITE_Y_COORD,
                     Knight.WIDTH,
@@ -223,8 +265,8 @@ public class GameScreen extends Screen {
         //draw black knight
         else {
             g.drawPixmap(Assets.pieces,
-                    Knight.X_START + x * Board.X_OFFSET,
-                    Knight.Y_START + y * Board.Y_OFFSET,
+                    (int) (Knight.X_START + x * Board.X_OFFSET),
+                    (int) (Knight.Y_START + y * Board.Y_OFFSET),
                     Knight.BLACK_X_COORD,
                     Knight.BLACK_Y_COORD,
                     Knight.WIDTH,
@@ -234,14 +276,14 @@ public class GameScreen extends Screen {
 
     }
 
-    private void drawBishop(int pieceColor, int x , int y){
+    private void drawBishop(int pieceColor, float x , float y){
         Graphics g = game.getGraphics();
 
         //draw white bishop
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    Bishop.X_START + x * Board.X_OFFSET,
-                    Bishop.Y_START + y * Board.Y_OFFSET,
+                    (int) (Bishop.X_START + x * Board.X_OFFSET),
+                    (int) (Bishop.Y_START + y * Board.Y_OFFSET),
                     Bishop.WHITE_X_COORD,
                     Bishop.WHITE_Y_COORD,
                     Bishop.WIDTH,
@@ -250,8 +292,8 @@ public class GameScreen extends Screen {
         //draw black bishop
         else {
             g.drawPixmap(Assets.pieces,
-                    Bishop.X_START + x * Board.X_OFFSET,
-                    Bishop.Y_START + y * Board.Y_OFFSET,
+                    (int) (Bishop.X_START + x * Board.X_OFFSET),
+                    (int) (Bishop.Y_START + y * Board.Y_OFFSET),
                     Bishop.BLACK_X_COORD,
                     Bishop.BLACK_Y_COORD,
                     Bishop.WIDTH,
@@ -261,14 +303,14 @@ public class GameScreen extends Screen {
 
     }
 
-    private void drawRook(int pieceColor, int x , int y){
+    private void drawRook(int pieceColor, float x , float y){
         Graphics g = game.getGraphics();
 
         //draw white rook
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    Rook.X_START + x * Board.X_OFFSET,
-                    Rook.Y_START + y * Board.Y_OFFSET,
+                    (int) (Rook.X_START + x * Board.X_OFFSET),
+                    (int) (Rook.Y_START + y * Board.Y_OFFSET),
                     Rook.WHITE_X_COORD,
                     Rook.WHITE_Y_COORD,
                     Rook.WIDTH,
@@ -277,8 +319,8 @@ public class GameScreen extends Screen {
         //draw black rook
         else {
             g.drawPixmap(Assets.pieces,
-                    Rook.X_START + x * Board.X_OFFSET,
-                    Rook.Y_START + y * Board.Y_OFFSET,
+                    (int) (Rook.X_START + x * Board.X_OFFSET),
+                    (int) (Rook.Y_START + y * Board.Y_OFFSET),
                     Rook.BLACK_X_COORD,
                     Rook.BLACK_Y_COORD,
                     Rook.WIDTH,
@@ -288,14 +330,14 @@ public class GameScreen extends Screen {
 
     }
 
-    private void drawQueen(int pieceColor, int x , int y){
+    private void drawQueen(int pieceColor, float x , float y){
         Graphics g = game.getGraphics();
 
         //draw white queen
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    Queen.X_START + x * Board.X_OFFSET,
-                    Queen.Y_START + y * Board.Y_OFFSET,
+                    (int) (Queen.X_START + x * Board.X_OFFSET),
+                    (int) (Queen.Y_START + y * Board.Y_OFFSET),
                     Queen.WHITE_X_COORD,
                     Queen.WHITE_Y_COORD,
                     Queen.WIDTH,
@@ -304,8 +346,8 @@ public class GameScreen extends Screen {
         //draw black queen
         else {
             g.drawPixmap(Assets.pieces,
-                    Queen.X_START + x * Board.X_OFFSET,
-                    Queen.Y_START + y * Board.Y_OFFSET,
+                    (int) (Queen.X_START + x * Board.X_OFFSET),
+                    (int) (Queen.Y_START + y * Board.Y_OFFSET),
                     Queen.BLACK_X_COORD,
                     Queen.BLACK_Y_COORD,
                     Queen.WIDTH,
@@ -315,14 +357,14 @@ public class GameScreen extends Screen {
 
     }
 
-    private void drawKing(int pieceColor, int x , int y){
+    private void drawKing(int pieceColor, float x , float y){
         Graphics g = game.getGraphics();
 
         //draw white king
         if(pieceColor == Piece.PieceAttribute.COLOR_WHITE) {
             g.drawPixmap(Assets.pieces,
-                    King.X_START + x * Board.X_OFFSET,
-                    King.Y_START + y * Board.Y_OFFSET,
+                    (int) (King.X_START + x * Board.X_OFFSET),
+                    (int) (King.Y_START + y * Board.Y_OFFSET),
                     King.WHITE_X_COORD,
                     King.WHITE_Y_COORD,
                     King.WIDTH,
@@ -331,8 +373,8 @@ public class GameScreen extends Screen {
         //draw black king
         else {
             g.drawPixmap(Assets.pieces,
-                    King.X_START + x * Board.X_OFFSET,
-                    King.Y_START + y * Board.Y_OFFSET,
+                    (int) (King.X_START + x * Board.X_OFFSET),
+                    (int) (King.Y_START + y * Board.Y_OFFSET),
                     King.BLACK_X_COORD,
                     King.BLACK_Y_COORD,
                     King.WIDTH,
