@@ -1,5 +1,6 @@
 package com.example.noahlovato.chessgame.framework.Framework.Handlers;
 
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
