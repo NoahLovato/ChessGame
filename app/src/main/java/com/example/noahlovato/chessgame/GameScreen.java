@@ -47,11 +47,11 @@ public class GameScreen extends Screen {
             Input.TouchEvent event = touchEvents.get(i);
             if(event.type == Input.TouchEvent.TOUCH_UP) {
 
-                int boardX = translateXToBoard(event.x);
-                int boardY = translateYToBoard(event.y);
+                int boardX2 = translateXToBoard(event.x);
+                int boardY2 = translateYToBoard(event.y);
 
                 //Checks that click is within board bounds
-                if(boardX < 8 && boardX > -1 && boardY < 8 && boardY > -1) {
+                if(boardX2 < 8 && boardX2 > -1 && boardY2 < 8 && boardY2 > -1) {
                     //selectedPiece will be null if no piece selected
                     //if(selectedPiece == null) {
                     //    selectedPiece = board.pieceAt(boardX, boardY);
@@ -68,11 +68,16 @@ public class GameScreen extends Screen {
                     //    selectedY = -1;
                     //}
                     if(selectedPiece != null) {
+                        board.addPiece(selectedPiece, boardX2, boardY2);
+                    }
+
+                } else {
+                    if(selectedPiece != null) {
                         board.addPiece(selectedPiece, boardX, boardY);
                     }
-                    //Reset piece being held after let go
-                    selectedPiece = null;
                 }
+                //Reset piece being held after let go
+                selectedPiece = null;
             }
             else if(event.type == Input.TouchEvent.TOUCH_DOWN) {
                 Log.d("TouchTest", "Touch down event detected.");
@@ -80,12 +85,14 @@ public class GameScreen extends Screen {
                 boardX = translateXToBoard(event.x);
                 boardY = translateYToBoard(event.y);
 
-                if(selectedPiece == null) {
+                if(selectedPiece == null && boardX != -1 && boardY != -1) {
                     selectedPiece = board.pieceAt(boardX, boardY);
                 }
 
             }
             else if(event.type == Input.TouchEvent.TOUCH_DRAGGED) {
+
+                Log.d("TouchTest", "Coordinates of drag = " + event.x + ", " + event.y);
 
                 if(selectedPiece != null) {
 
@@ -94,7 +101,6 @@ public class GameScreen extends Screen {
                     }
                     selectedX = event.x;
                     selectedY = event.y;
-                    Log.d("TouchTest", "Coordinates of drag = " + selectedX + ", " + selectedY);
 
                 }
             }
